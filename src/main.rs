@@ -32,6 +32,7 @@ use tracing_subscriber::{
 
 mod metrics;
 mod utils;
+mod config;
 
 async fn github_handler() -> Response<Body> {
     Response::builder()
@@ -74,6 +75,9 @@ async fn start_server() {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "info");
+    }
     let env_filter = EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into());
     tracing_subscriber::registry()
             .with(tracing_subscriber::fmt::layer().pretty()
