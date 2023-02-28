@@ -1,0 +1,22 @@
+[package]
+name = "crabwalk"
+version = "0.0.1"
+edition = "2021"
+default-run = "crabwalk"
+license = "Apache-2.0"
+publish = false
+
+[[bin]]
+doc = false
+name = "crabwalk"
+path = "src/main.rs"
+
+[dependencies]
+axum = "0.6.9"
+tokio = { version = "1.25.0", features = ["full"]}
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+metrics = "0.20.1"
+metrics-exporter-prometheus = "0.11.0"
+env_logger = "0.10.0"
+log = "0.4.17"
