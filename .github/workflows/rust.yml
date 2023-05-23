@@ -30,6 +30,7 @@ jobs:
           command: fmt 
   build-test:
     name: Build and Test x86_64
+    needs: format-lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
