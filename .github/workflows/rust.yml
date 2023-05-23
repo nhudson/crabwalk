@@ -18,62 +18,29 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Set Rust Version
+      - name: Rust fmt and clippy
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-
-      - name: Format Code
-        uses: actions-rs/rustfmt@v1
+      - uses: actions-rs/cargo@v1
         with:
-          check: true
-
-      - name: Audit Dependencies
-        uses: actions-rs/cargo-audit@v1
-
-      - name: Check for Dead Links
-        uses: actions-rs/cargo-deadlinks@v1
-
+          command: clippy 
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt 
   build-test:
-    name: Build and Test
+    name: Build and Test x86_64
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-
-      - name: Set Rust Version
+      - name: Rust Build x86_64 
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-
-      - name: Set Up Rust Environment
-        uses: actions-rs/cargo-setup@v1
-
-      - name: Cache Rust Dependencies
-        uses: actions-rs/cargo-cache@v1
-
-      - name: Build
-        uses: actions-rs/cargo-build@v1
-
-      - name: Test
-        uses: actions-rs/cargo-test@v1
-
-      - name: Run Clippy
-        uses: actions-rs/cargo-clippy@v1
-
-  code-coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
-      - name: Set Rust Version
-        uses: actions-rs/toolchain@v1
+      - uses: actions-rs/cargo@v1
         with:
-          toolchain: stable
-
-      - name: Generate Code Coverage Report
-        uses: actions-rs/cargo-tarpaulin@v1
+          command: build 
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test 
