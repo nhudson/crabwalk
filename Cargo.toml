@@ -1,23 +1,18 @@
 [package]
 name = "crabwalk"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
-default-run = "crabwalk"
-license = "Apache-2.0"
-publish = false
-
-[[bin]]
-doc = false
-name = "crabwalk"
-path = "src/main.rs"
 
 [dependencies]
-axum = "0.6.9"
-tower-http = { version = "0.4.0", features = ["full"] }
-tokio = { version = "1.25.0", features = ["full"]}
-tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
-metrics = "0.20.1"
-metrics-exporter-prometheus = "0.11.0"
-anyhow = "1.0.69"
-once_cell = "1.17.1"
+actix-web = "4.3.1"
+reqwest = { version = "0.11", features = ["json"] }
+slack-hook = "0.8"
+serde = { version = "1.0", features = ["derive"]}
+log = "0.4"
+env_logger = "0.10"
+parking_lot = "0.12"
+sha-1 = "0.10"
+hmac = "0.12"
+futures = "0.3"
+hex = "0.4"
+subtle = "2.5"

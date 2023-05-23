@@ -1,92 +1,61 @@
-#![allow(unused_imports, unused_variables)]
-use std::{
-    future::ready,
-    net::SocketAddr,
-};
-use axum::{
-    body::Body,
-    http::Response,
-    middleware::{
-        self, 
-        Next,
-    },
-    routing::get,
-    Router
-};
-use tokio::fs::metadata;
-use tower_http::trace::{
-        TraceLayer, 
-        DefaultOnResponse,
-        DefaultMakeSpan,
-    };
-use tracing::{
-    error,
-    info,
-};
-use tracing_subscriber::{
-    layer::SubscriberExt,
-    util::SubscriberInitExt,
-    EnvFilter, Layer,
-    filter,
-};
+use actix_web::{dev::ServerHandle, middleware, web, App, HttpServer};
+use log::{debug, info};
+use parking_lot::Mutex;
 
-mod metrics;
-mod utils;
 mod config;
+mod github;
+mod health;
+use crate::{config::Config, github::github as gh, health::liveness, health::readiness};
 
-async fn github_handler() -> Response<Body> {
-    Response::builder()
-        .status(204)
-        .body(Body::empty())
-        .unwrap()
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    // Initialize logger
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
+    let config = Config::default();
+    debug!("Config: {:?}", config);
+    info!(
+        "Starting HTTP server at http://{}:{}/",
+        config.server_host, config.server_port
+    );
+
+    let stop_handle = web::Data::new(StopHandle::default());
+
+    let server = HttpServer::new({
+        let stop_handle = stop_handle.clone();
+        move || {
+            {
+                App::new()
+                    .app_data(stop_handle.clone())
+                    .wrap(middleware::Logger::default().exclude("/health"))
+            }
+            .service(liveness)
+            .service(readiness)
+            .service(gh)
+        }
+    })
+    .bind((config.server_host.clone(), config.server_port))?
+    .shutdown_timeout(5)
+    .run();
+
+    stop_handle.register(server.handle());
+
+    server.await
 }
 
-async fn health_handler() -> Response<Body> {
-    Response::builder()
-        .status(204)
-        .body(Body::empty())
-        .unwrap()
+#[derive(Default)]
+struct StopHandle {
+    inner: Mutex<Option<ServerHandle>>,
 }
 
-fn run_app() -> Router {
-    let recorder_handle = metrics::setup_metrics_recorder();
-    let trace_layer = TraceLayer::new_for_http()
-        .make_span_with(DefaultMakeSpan::new().level(tracing::Level::INFO))
-        .on_response(DefaultOnResponse::new().level(tracing::Level::INFO));
-    Router::new()
-        .route("/github_webhook", get(github_handler))
-        .route("/healthz", get(health_handler))
-        .route("/metrics", get(move || ready(recorder_handle.render())))
-        .route_layer(middleware::from_fn(metrics::track_metrics))
-        .layer(trace_layer)
-}
-
-async fn start_server() {
-    let app = run_app();
-
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-    info!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .with_graceful_shutdown(utils::axum_shutdown())
-        .await
-        .unwrap()
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var("RUST_LOG", "info");
+impl StopHandle {
+    // Set the ServerHandle to stop
+    pub(crate) fn register(&self, handle: ServerHandle) {
+        *self.inner.lock() = Some(handle);
     }
-    let env_filter = EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into());
-    tracing_subscriber::registry()
-            .with(tracing_subscriber::fmt::layer().pretty()
-                .with_filter(env_filter)
-        )
-        .init();
-    tokio::select! {
-        _ = start_server() => info!("Starting crabwalk...")
-    };
 
-    Ok(())
+    //pub(crate) fn stop(&self, graceful: bool) {
+    //    #[allow(clippy::let_underscore_future)]
+    //    let _ = self.inner.lock().as_ref().unwrap().stop(graceful);
+    //}
 }

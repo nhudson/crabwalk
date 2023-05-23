@@ -1,48 +1,37 @@
 use std::env;
-use std::process;
-use anyhow::{anyhow, Result};
-use once_cell::sync::OnceCell;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Config {
-    pub host: Option<String>,
-    pub port: Option<String>,
-    pub gh_token: String,
+    pub webhook_secret: String,
+    pub github_token: String,
+    pub slack_token: String,
+    pub server_host: String,
+    pub server_port: u16,
 }
 
-impl Config {
-    pub fn new() -> Result<Config> {
-        let gh_token = env::var("GITHUB_TOKEN");
-        if gh_token.is_err() {
-            return Err(anyhow!("GITHUB_TOKEN not set"));
-        }
+pub const WEBHOOK_SECRET: &str = "zzhUNwm8OlyDFQGKztGPMPVQ2ayFv8r3EzfJOjpp2yA=";
 
-        Ok(Config {
-            host: env::var("HOST").ok(),
-            port: env::var("PORT").ok(),
-            gh_token: gh_token.unwrap(),
-        })
-    }
-}
-
-pub static CONFIG: OnceCell<Config> = OnceCell::new();
-
-pub fn check_gh_token() -> &'static str {
-    &CONFIG.get().expect("fail to get env variable").gh_token
-}
-
-
-pub fn ensure_configuration() {
-    match Config::new() {
-        Ok(c) => {
-            if let Err(e) = CONFIG.set(c) {
-                eprintln!("reading env variable failed: {:?}", e);
-            }
-        }
-
-        Err(e) => {
-            eprintln!("{}", e);
-            process::exit(1);
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            webhook_secret: from_env_or_default("WEBHOOK_SECRET", WEBHOOK_SECRET)
+                .parse()
+                .unwrap(),
+            github_token: from_env_or_default("GITHUB_TOKEN", "").parse().unwrap(),
+            slack_token: from_env_or_default("SLACK_TOKEN", "").parse().unwrap(),
+            server_host: from_env_or_default("SERVER_HOST", "0.0.0.0")
+                .parse()
+                .unwrap(),
+            server_port: from_env_or_default("SERVER_PORT", "8080").parse().unwrap(),
         }
     }
+}
+
+// Source the variable from the env - use default if not set
+fn from_env_or_default(var: &str, default: &str) -> String {
+    let value = env::var(var).unwrap_or_else(|_| default.to_owned());
+    if value.is_empty() {
+        panic!("{} must be set", var);
+    }
+    value
 }
