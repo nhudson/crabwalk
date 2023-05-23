@@ -24,6 +24,16 @@ up to date `rustup update`.
 The `justfile` also uses [cargo-watch](https://crates.io/crates/cargo-watch), so
 if you wish to use it install it as well.
 
+The application takes a few environment variables that must be defined
+
+| Vairbale       | Defaults    |
+| -------------- | ----------- |
+| WEBHOOK_SECRET | `zzhUNwm8OlyDFQGKztGPMPVQ2ayFv8r3EzfJOjpp2yA` |
+| GITHUB_TOKEN   | n/a         |
+| SLACK_TOKEN    | n/a         |
+| SERVER_HOST    | `0.0.0.0`   |
+| SERVER_PORT    | `8080`      |
+
 ```bash
 > just watch
 ```
