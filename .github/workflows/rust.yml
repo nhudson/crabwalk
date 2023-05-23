@@ -22,12 +22,11 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
             toolchain: nightly
-            components: clippy
+            components: rustfmt, clippy
             override: true
-      - uses: actions-rs/clippy-check@v1
+      - uses: actions-rs/cargo@v1
         with:
-          token: ${{ secrets.CLIPPY_TOKEN }}
-          args: --all-features
+          command: clippy
       - uses: actions-rs/cargo@v1
         with:
           command: fmt 
