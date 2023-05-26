@@ -1,5 +1,4 @@
 use actix_web::{get, HttpRequest, HttpResponse, Responder};
-use reqwest;
 
 #[get("/health/liveness")]
 pub async fn liveness(_: HttpRequest) -> impl Responder {
