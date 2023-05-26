@@ -3,8 +3,11 @@ name = "crabwalk"
 version = "0.1.0"
 edition = "2021"
 
+[registries.crates-io]
+protocol = "sparse"
+
 [dependencies]
-actix-web = "4.3.1"
+actix-web = "4.3"
 reqwest = { version = "0.11", features = ["json"] }
 slack-hook = "0.8"
 serde = { version = "1.0", features = ["derive"]}

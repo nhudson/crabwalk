@@ -23,15 +23,17 @@ async fn main() -> std::io::Result<()> {
 
     let server = HttpServer::new({
         let stop_handle = stop_handle.clone();
+        let config_data = web::Data::new(config.clone());
         move || {
             {
                 App::new()
                     .app_data(stop_handle.clone())
+                    .app_data(config_data.clone())
                     .wrap(middleware::Logger::default().exclude("/health"))
+                    .service(liveness)
+                    .service(readiness)
+                    .service(gh)
             }
-            .service(liveness)
-            .service(readiness)
-            .service(gh)
         }
     })
     .bind((config.server_host.clone(), config.server_port))?

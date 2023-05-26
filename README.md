@@ -35,5 +35,39 @@ The application takes a few environment variables that must be defined
 | SERVER_PORT    | `8080`      |
 
 ```bash
-> just watch
+> SLACK_TOKEN=<slack token> GITHUB_TOKEN=<github token> just watch
+```
+
+## Testing
+
+To test you will need a sample payload.  Save this as a `payload.json` file.
+
+```bash
+{
+  "action": "created",
+  "issue": {
+    "number": 1,
+    "title": "An issue",
+    "body": "Please fix this."
+  },
+  "comment": {
+    "body": "A comment on the issue."
+  }
+}
+```
+
+Next you will need to generate an HMAC signature
+
+```bash
+HMAC_SIGNATURE=$(openssl dgst -sha1 -hmac YOUR_SECRET_KEY payload.json | awk '{print "sha1="$2}')
+```
+
+Now you can send the payload with the `cURL` request
+
+```bash
+curl -X POST \
+     -H 'Content-Type: application/json' \
+     -H "X-Hub-Signature: $HMAC_SIGNATURE" \
+     -d @payload.json \
+     http://localhost:8080/github
 ```
