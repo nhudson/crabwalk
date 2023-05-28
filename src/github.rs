@@ -1,8 +1,8 @@
-use actix_web::{post, web, HttpRequest, HttpResponse, Responder, http::header::HeaderMap};
+use actix_web::{http::header::HeaderMap, post, web, HttpRequest, HttpResponse, Responder};
 use futures::StreamExt;
-use ring::hmac::{self, verify};
 use log::error;
 use octocrab::models::events::payload::EventPayload;
+use ring::hmac::{self, verify};
 
 use crate::config::Config;
 
@@ -12,7 +12,6 @@ pub async fn github(
     req: HttpRequest,
     mut payload: web::Payload,
 ) -> impl Responder {
-
     // Extract body bytes from the payload stream
     let mut body = web::BytesMut::new();
     while let Some(chunk) = payload.next().await {
@@ -62,8 +61,12 @@ fn verify_payload(key: &hmac::Key, body: &[u8], signature: &[u8]) -> bool {
 }
 
 fn check_and_generate_signature(headers: &HeaderMap) -> Result<Vec<u8>, &'static str> {
-    let signature = headers.get("X-Hub-Signature-256").ok_or("Missing X-Hub-Signature-256 header")?;
-    let signature_str = signature.to_str().map_err(|_| "Invalid X-Hub-Signature-256 header")?;
+    let signature = headers
+        .get("X-Hub-Signature-256")
+        .ok_or("Missing X-Hub-Signature-256 header")?;
+    let signature_str = signature
+        .to_str()
+        .map_err(|_| "Invalid X-Hub-Signature-256 header")?;
     let signature_bytes = signature_str.get(7..).ok_or("Invalid signature format")?;
     hex::decode(signature_bytes).map_err(|_| "Invalid signature format")
 }
