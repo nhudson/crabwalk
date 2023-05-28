@@ -1,11 +1,8 @@
-use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{post, web, HttpRequest, HttpResponse, Responder, http::header::HeaderMap};
 use futures::StreamExt;
-use hex::decode;
-use hmac::{Hmac, Mac};
+use ring::hmac::{self, verify};
 use log::error;
-use sha1::Sha1;
-use subtle::ConstantTimeEq;
-//use slack_hook::{PayloadBuilder, Slack};
+use octocrab::models::events::payload::EventPayload;
 
 use crate::config::Config;
 
@@ -15,45 +12,58 @@ pub async fn github(
     req: HttpRequest,
     mut payload: web::Payload,
 ) -> impl Responder {
-    // Extract body bytes from the Payload stream
+
+    // Extract body bytes from the payload stream
     let mut body = web::BytesMut::new();
     while let Some(chunk) = payload.next().await {
         body.extend_from_slice(&chunk.unwrap());
     }
+    let body_vec = body.to_vec();
 
-    // Extract the X-Hub-Signature header from the request
-    let signature = req
-        .headers()
-        .get("X-Hub-Signature")
-        .and_then(|hv| hv.to_str().ok())
-        .unwrap_or_default()
-        .to_string();
-
-    if verify_webhook_token(&config.webhook_secret, &signature) {
-        HttpResponse::Ok().finish()
-    } else {
-        error!("Invalid signature from /github request");
-        HttpResponse::Unauthorized().body("Invalid signature")
-    }
-}
-
-fn verify_webhook_token(secret: &str, signature: &str) -> bool {
-    // Github signature is in sha1=<hash> format
-    if !signature.starts_with("sha1=") {
-        return false;
+    // Check for content type header is application/json
+    if req.headers().get("content-type").unwrap() != "application/json" {
+        error!("Invalid content-type in request header");
+        return HttpResponse::BadRequest().body("Invalid content-type");
     }
 
-    // Remove prefix and decode hex
-    let signature_bytes = match decode(&signature[5..]) {
-        Ok(bytes) => bytes,
-        Err(_) => return false,
+    // Check for X-Hub-Signature-256 header
+    let signature = match check_and_generate_signature(req.headers()) {
+        Ok(signature) => signature,
+        Err(e) => {
+            error!("{}", e);
+            return HttpResponse::BadRequest().body(e);
+        }
     };
 
-    // Create HMAC-SHA1 signature of the payload with our secret key
-    let mac = Hmac::<Sha1>::new_from_slice(secret.as_bytes()).expect("Failed to create HMAC");
-    let expected_signature = mac.finalize().into_bytes();
+    // Verify HMAC signature
+    let secret = &config.webhook_secret;
+    let key = hmac::Key::new(hmac::HMAC_SHA256, secret.as_bytes());
 
-    // use constant_time::constant_time_eq to compare the two signatures
-    let signature_eq = signature_bytes.ct_eq(&expected_signature);
-    signature_eq.into()
+    // Call verify_payload to verify the signature
+    if !verify_payload(&key, &body_vec, &signature) {
+        error!("Invalid signature");
+        return HttpResponse::Unauthorized().body("Invalid signature");
+    }
+
+    // Trust the payload if the signature is valid
+    // (TODO): Eventually this will do something with the payload
+    let _payload: EventPayload = match serde_json::from_slice(&body_vec) {
+        Ok(payload) => payload,
+        Err(_) => {
+            error!("Invalid payload");
+            return HttpResponse::BadRequest().body("Invalid payload");
+        }
+    };
+    HttpResponse::Ok().finish()
+}
+
+fn verify_payload(key: &hmac::Key, body: &[u8], signature: &[u8]) -> bool {
+    verify(key, body, signature).is_ok()
+}
+
+fn check_and_generate_signature(headers: &HeaderMap) -> Result<Vec<u8>, &'static str> {
+    let signature = headers.get("X-Hub-Signature-256").ok_or("Missing X-Hub-Signature-256 header")?;
+    let signature_str = signature.to_str().map_err(|_| "Invalid X-Hub-Signature-256 header")?;
+    let signature_bytes = signature_str.get(7..).ok_or("Invalid signature format")?;
+    hex::decode(signature_bytes).map_err(|_| "Invalid signature format")
 }
