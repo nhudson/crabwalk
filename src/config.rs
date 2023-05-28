@@ -7,9 +7,11 @@ pub struct Config {
     pub slack_token: String,
     pub server_host: String,
     pub server_port: u16,
+    pub log_level: String,
 }
 
-pub const WEBHOOK_SECRET: &str = "zzhUNwm8OlyDFQGKztGPMPVQ2ayFv8r3EzfJOjpp2yA=";
+// WEBHOOK_SECRET is the default value for the webhook secret in sha256 format
+pub const WEBHOOK_SECRET: &str = "7b73b7c3b0fde4f79f6e80a95c9dab06a4289b591f3b0913cda355f50e595a19";
 
 impl Default for Config {
     fn default() -> Self {
@@ -23,6 +25,7 @@ impl Default for Config {
                 .parse()
                 .unwrap(),
             server_port: from_env_or_default("SERVER_PORT", "8080").parse().unwrap(),
+            log_level: from_env_or_default("LOG_LEVEL", "info").parse().unwrap(),
         }
     }
 }

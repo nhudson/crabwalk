@@ -1,16 +1,17 @@
 use actix_web::{dev::ServerHandle, middleware, web, App, HttpServer};
 use log::{debug, info};
 use parking_lot::Mutex;
-
-mod config;
-mod github;
-mod health;
-use crate::{config::Config, github::github as gh, health::liveness, health::readiness};
+use crabwalk::{
+    config::Config,
+    github::github as gh,
+    health::liveness,
+    health::readiness
+};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Initialize logger
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or(Config::default().log_level));
 
     let config = Config::default();
     debug!("Config: {:?}", config);

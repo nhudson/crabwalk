@@ -1,11 +1,1 @@
-{
-  "action": "created",
-  "issue": {
-    "number": 1,
-    "title": "An issue",
-    "body": "Please fix this."
-  },
-  "comment": {
-    "body": "A comment on the issue."
-  }
-}
+{"action":"created","issue":{"number":1,"title":"An issue","body":"Please fix this."},"comment":{"body":"A comment on the issue."}}
