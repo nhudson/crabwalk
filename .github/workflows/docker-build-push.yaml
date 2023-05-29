@@ -48,10 +48,9 @@ jobs:
           push: true
           build-args: |
             TARGET=${{ matrix.target }}
+            VERSION=${{ github.ref }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}
             ${{ steps.release_tag.outputs.RELEASE_VERSION != '' && 'ghcr.io/${{ github.repository }}:${{ steps.release_tag.outputs.RELEASE_VERSION }}' || '' }}
             ${{ steps.release_tag.outputs.RELEASE_VERSION != '' && 'ghcr.io/${{ github.repository }}:latest' || '' }}
           platforms: ${{ matrix.platform }}
-          build-args: |
-            VERSION=${{ github.ref }}
