@@ -9,4 +9,4 @@ RUN cargo build --release --target ${TARGET}
 FROM debian:buster-slim
 LABEL org.opencontainers.image.source=https://github.com/nhudson/crabwalk
 LABEL version=${VERSION}
-COPY  --from=builder /crabwalk/target/release/crabwalk /usr/local/bin/crabwalk
+COPY  --from=builder /crabwalk/target/${TARGET}/release/crabwalk /usr/local/bin/crabwalk
