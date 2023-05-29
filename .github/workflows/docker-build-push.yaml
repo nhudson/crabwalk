@@ -40,9 +40,9 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/crabwalk:${{ github.sha }}
-            ${{ steps.release_tag.outputs.RELEASE_VERSION != '' && 'ghcr.io/${{ github.repository }}/crabwalk:${{ steps.release_tag.outputs.RELEASE_VERSION }}' || '' }}
-            ${{ steps.release_tag.outputs.RELEASE_VERSION != '' && 'ghcr.io/${{ github.repository }}/crabwalk:latest' || '' }}
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ${{ steps.release_tag.outputs.RELEASE_VERSION != '' && 'ghcr.io/${{ github.repository }}:${{ steps.release_tag.outputs.RELEASE_VERSION }}' || '' }}
+            ${{ steps.release_tag.outputs.RELEASE_VERSION != '' && 'ghcr.io/${{ github.repository }}:latest' || '' }}
           platforms: linux/amd64
           build-args: |
             VERSION=${{ github.ref }}
