@@ -29,15 +29,15 @@ jobs:
       - name: Add release tag
         id: release_tag
         run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo "::set-output name=RELEASE_VERSION::${GITHUB_REF#refs/tags/}"
+          if [[ ${{ github.ref }} == refs/tags/* ]]; then
+            echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Set version
+      - name: Set version arg
         id: version_tag
         run: |
           if [[ ${{ github.ref }} == refs/heads/main ]]; then
-            echo "::set-output name=VERSION::${{ github.sha }}" 
+            echo "VERSION=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           fi
 
       - name: docker build and push
@@ -49,7 +49,7 @@ jobs:
           build-args: |
             VERSION=${{ steps.version_tag.outputs.VERSION }}
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:${{ steps.version_tag.outputs.VERSION }}
             ${{ steps.release_tag.outputs.RELEASE_VERSION != '' && 'ghcr.io/${{ github.repository }}:${{ steps.release_tag.outputs.RELEASE_VERSION }}' || '' }}
             ${{ steps.release_tag.outputs.RELEASE_VERSION != '' && 'ghcr.io/${{ github.repository }}:latest' || '' }}
           platforms: ${{ matrix.platform }}
