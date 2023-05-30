@@ -12,10 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            platform: linux/amd64
 
     steps:
       - name: Checkout code
@@ -38,6 +34,13 @@ jobs:
             echo "::set-output name=RELEASE_VERSION::${GITHUB_REF#refs/tags/}"
           fi
 
+      - name: Set version
+        id: version_tag
+        run: |
+          if [[ ${{ github.ref }} == refs/heads/main ]]; then
+            echo "::set-output name=VERSION::${{ github.sha }}" 
+          fi
+
       - name: docker build and push
         uses: docker/build-push-action@v4
         with:
@@ -45,8 +48,7 @@ jobs:
           file: ./Dockerfile
           push: true
           build-args: |
-            TARGET=${{ matrix.target }}
-            VERSION=${{ github.ref }}
+            VERSION=${{ steps.version_tag.outputs.VERSION }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}
             ${{ steps.release_tag.outputs.RELEASE_VERSION != '' && 'ghcr.io/${{ github.repository }}:${{ steps.release_tag.outputs.RELEASE_VERSION }}' || '' }}
