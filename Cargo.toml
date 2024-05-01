@@ -10,7 +10,7 @@ protocol = "sparse"
 actix-web = "4.5.1"
 reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0", features = ["derive"]}
-log = "0.4"
+log = "0.4.21"
 env_logger = "0.11.3"
 parking_lot = "0.12.2"
 futures = "0.3"
