@@ -1,5 +1,5 @@
 ARG VERSION
-FROM rust:1.85 as builder
+FROM rust:1.87 as builder
 
 WORKDIR /crabwalk
 COPY . .
